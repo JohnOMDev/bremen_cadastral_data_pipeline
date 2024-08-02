@@ -1,16 +1,15 @@
 from os.path import dirname, join
 
-# from pathlib import Path
-
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
-import syte_pipeline
+# import syte_pipeline
 
-SYTE_LOCAL_DIR = dirname(dirname(syte_pipeline.__file__))
+# SYTE_LOCAL_DIR = dirname(dirname(syte_pipeline.__file__))
 # Define the project directory
 
-# SYTE_LOCAL_DIR = os.getenv("SYTE_LOCAL_DIR")
+SYTE_LOCAL_DIR = os.getenv("SYTE_LOCAL_DIR")
 
 
 class DBCredentials(BaseSettings):
@@ -18,9 +17,9 @@ class DBCredentials(BaseSettings):
 
     host: str
     port: int = 5432
-    username: str
+    user: str
     password: str
-    model_config = SettingsConfigDict(env_prefix="syte_pipeline_")
+    model_config = SettingsConfigDict(env_prefix="syte_db_")
 
 
 class Settings(BaseSettings):
