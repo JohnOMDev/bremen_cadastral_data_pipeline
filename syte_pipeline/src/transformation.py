@@ -21,12 +21,6 @@ LOG.setLevel(os.environ.get("LOG_LEVEL", logging.DEBUG))
 conn = duckdb.connect()
 settings = Settings()
 
-# db_credentials = DBCredentials()
-
-
-# default_db = f"user={db_credentials.user} host={db_credentials.host} password={db_credentials.password} port=5432"
-
-
 class Transformer:
     def read_shapefiles_file(self, filename):
         gpd_df = gpd.read_file(filename)

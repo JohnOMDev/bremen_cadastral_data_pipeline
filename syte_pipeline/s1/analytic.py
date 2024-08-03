@@ -6,12 +6,23 @@ Created on Fri Aug 02 15:15:30 2024
 @author: johnomole
 """
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks, Response
+from fastapi.responses import HTMLResponse
+from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from syte_pipeline.settings import Settings, DBCredentials
+import plotly.express as px
+from plotly.io import to_html
 import os
 import glob
 import duckdb
+import base64
+from io import BytesIO
+import matplotlib
+import seaborn as sns
+
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
 from os.path import join
 from syte_pipeline.src.ingestion import Extraction
 from syte_pipeline.src.transformation import Transformer
@@ -122,9 +133,11 @@ async def prepare_analytics() -> str:
 
     return "OK"
 
+
 def read_prepared_sql() -> str:
     dir = join(settings.prepared_dir, "*", "*.parquet")
     return f"read_parquet('{dir}', hive_partitioning = 1, hive_types_autocast = 0)"
+
 
 @v1.get("/cadastral/")
 def list_cadastral(num_results: int = 100, page: int = 0) -> list[dict]:
@@ -170,33 +183,143 @@ def list_cadastral(num_results: int = 100, page: int = 0) -> list[dict]:
     ORDER BY district LIMIT {num_results} OFFSET {num_results * page}
     """,
     )
-    return [{"building_identifier": building_identifier, "geometry": geometry, 
-             "building_area": building_area,"num_floors": num_floors, 
-             "n_parcel": n_parcel, "type": type,
-             "building_date": building_date, "parcel_identifier": parcel_identifier, 
-             "location_text": location_text, "parcel_area": parcel_area,
-             "municipal": municipal, "district": district
-             } for building_identifier, geometry, building_area,
-            num_floors, n_parcel, type, building_date, parcel_identifier, location_text, parcel_area, cadastral_identifier,
-            municipal, district in res.fetchall()]
+    return [
+        {
+            "building_identifier": building_identifier,
+            "geometry": geometry,
+            "building_area": building_area,
+            "num_floors": num_floors,
+            "n_parcel": n_parcel,
+            "type": type,
+            "building_date": building_date,
+            "parcel_identifier": parcel_identifier,
+            "location_text": location_text,
+            "parcel_area": parcel_area,
+            "cadastral_identifier": cadastral_identifier,
+            "municipal": municipal,
+            "district": district,
+        }
+        for building_identifier, geometry, building_area, num_floors, n_parcel, type, building_date, parcel_identifier, location_text, parcel_area, cadastral_identifier, municipal, district in res.fetchall()
+    ]
 
 
-@v1.get("/cadastral/{district}/building")
-async def get_district_potential_building(icao: str, num_results: int = 1000, page: int = 0) -> list[dict]:
-    pass
+@v1.get("/cadastral/land_use")
+async def get_district_potential_building(
+    num_results: int = 1000, page: int = 0
+) -> list[dict]:
+    res = duckdb.sql(
+        f"""
+        WITH parcel_counts AS (
+            SELECT
+                district,
+                type,
+                SUM(building_area) AS total_building_area
+            FROM {read_prepared_sql()}
+            GROUP BY district, type
+        ),
+        ranked_parcels AS (
+            SELECT
+                district,
+                type,
+                total_building_area,
+                ROW_NUMBER() OVER (PARTITION BY district ORDER BY total_building_area DESC) AS rank
+            FROM parcel_counts
+        )
+        SELECT
+            district,
+            type AS most_popular_land_type,
+            total_building_area
+        FROM ranked_parcels
+        WHERE rank = 1
+        ;
+                """
+    )
+    rows = res.fetchall()
+    if not rows:
+        return []
+    return [
+        {
+            "district": district,
+            "most_popular_land_type": most_popular_land_type,
+            "total_building_area": total_building_area,
+        }
+        for district, most_popular_land_type, total_building_area in res.fetchall()
+    ]
 
 
-@v1.get("/cadastral/{icao}/stats")
-async def get_aircraft_statistics(icao: str) -> dict:
-    pass
+@v1.get("/cadastral/district_parcel_areas", response_class=HTMLResponse)
+async def district_parcel_areas():
+    data = duckdb.sql(
+        f"""
+    INSTALL spatial;
+    LOAD spatial;
+    INSTALL parquet;
+    LOAD parquet;
+    SET memory_limit = '5GB';
+    SET threads TO 8;
+    with parcel_building_areas as (
+       SELECT 
+           district,
+           sum(parcel_area) AS total_parcel_area,
+           SUM(building_area) as total_building_area
+       FROM {read_prepared_sql()}
+       GROUP BY district
+            )
+    SELECT  
+        district,
+        (total_parcel_area/NULLIF(total_building_area, 0)) AS area_ratio
+    from parcel_building_areas
+    ORDER BY area_ratio desc limit 10
+    ;
+    """
+    ).to_df()
+    fig = px.bar(
+        data,
+        x="district",
+        y="area_ratio",
+        color="district",
+        title="Survival Rate by Class with Plotly",
+    )
+
+    plot_div = to_html(fig, full_html=False)
+
+    html_content = f"""
+    <html>
+        <head>
+            <title>The district with more potentials for new buildings</title>
+        </head>
+        <body>
+            {plot_div}
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 
-@v1.get("/cadastral/{district}/building")
-async def get_district_potential_building(icao: str, num_results: int = 1000, page: int = 0) -> list[dict]:
-    pass
-
-
-@v1.get("/cadastral/{icao}/stats")
-async def get_aircraft_statistics(icao: str) -> dict:
-    pass
-
+duckdb.sql(
+    f"""
+WITH parcel_counts AS (
+    SELECT
+        district,
+        type,
+        SUM(building_area) AS total_building_area
+    FROM {read_prepared_sql()}
+    GROUP BY district, type
+),
+ranked_parcels AS (
+    SELECT
+        district,
+        type,
+        total_building_area,
+        ROW_NUMBER() OVER (PARTITION BY district ORDER BY total_building_area DESC) AS rank
+    FROM parcel_counts
+)
+SELECT
+    district,
+    type AS most_popular_land_type,
+    total_building_area
+FROM ranked_parcels
+WHERE rank = 1
+;
+        """
+).to_df()
