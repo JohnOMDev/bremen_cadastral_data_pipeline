@@ -6,7 +6,7 @@ Created on Fri Aug 02 15:15:30 2024
 @author: johnomole
 """
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, HTTPException
 from fastapi.responses import HTMLResponse
 from concurrent.futures import ThreadPoolExecutor
 from syte_pipeline.settings import Settings, DBCredentials
@@ -50,9 +50,9 @@ data_loader_handler = DataLoader(default_db)
 
 
 @v1.post("/cadastral/download")
-async def download_bremen_state_data() -> str:
+def download_bremen_state_data() -> str:
     """
-
+    Downloads and extracts Bremen state data.
     Returns
     -------
     str
@@ -65,16 +65,19 @@ async def download_bremen_state_data() -> str:
         "https://gdi2.geo.bremen.de/inspire/download/ADV-Shape/data/ALKIS_AdV_SHP_2024_04_HB.zip",
         "https://gdi2.geo.bremen.de/inspire/download/ADV-Shape/data/ALKIS_AdV_SHP_2024_04_BHV.zip",
     ]
-    with ThreadPoolExecutor(max_workers=12) as executor:
-        executor.map(extraction_handler.extract_specific_files, zip_url)
+    try:
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            executor.map(extraction_handler.extract_specific_files, zip_url)
+    except Exception as e:
 
+        return f"Error: {str(e)}"
     return "OK"
 
 
 @v1.post("/cadastral/prepare")
-async def prepare_data() -> str:
+def prepare_data() -> str:
     """
-
+    Prepare and transform Bremen state data. Export them into geoparquet
     Returns
     -------
     str
@@ -83,25 +86,29 @@ async def prepare_data() -> str:
     """
     raw_dir = os.path.join(settings.raw_dir, "day=20240801")
     file_map = {}
-    for root, _, filenames in os.walk(raw_dir):
-        sub_dir = os.path.basename(root)
-        shp_files = [
-            os.path.join(root, name)
-            for name in filenames
-            if os.path.splitext(name)[1].lower() == ".shp"
-        ]
+    try:
+        for root, _, filenames in os.walk(raw_dir):
+            sub_dir = os.path.basename(root)
+            shp_files = [
+                os.path.join(root, name)
+                for name in filenames
+                if os.path.splitext(name)[1].lower() == ".shp"
+            ]
 
-        if shp_files:
-            file_map[sub_dir] = shp_files
+            if shp_files:
+                file_map[sub_dir] = shp_files
 
-    transform_handler.transform(file_map)
+        transform_handler.transform(file_map)
+    except Exception as e:
+
+        return f"Error: {str(e)}"
     return "OK"
 
 
 @v1.post("/cadastral/analytics")
-async def prepare_analytics() -> str:
+def prepare_analytics() -> str:
     """
-
+    Create an analytical table and perform upsert of the data into the table: buildings and parcels.
     Returns
     -------
     str
@@ -115,12 +122,13 @@ async def prepare_analytics() -> str:
         (prepared_filenames[i : i + batch_size])
         for i in range(0, len(prepared_filenames), batch_size)
     ]
-
-    data_loader_handler.create_db_objects()
-    for batch in batches:
-        data_loader_handler.export_building_parcel_data_to_psql(batch)
-    logging.info("export ended")
-
+    try:
+        data_loader_handler.create_db_objects()
+        for batch in batches:
+            data_loader_handler.export_building_parcel_data_to_psql(batch)
+        logging.info("export ended")
+    except Exception as e:
+        return f"Error: {str(e)}"
     return "OK"
 
 
@@ -143,7 +151,6 @@ def list_cadastral(num_results: int = 100, page: int = 0) -> list[dict]:
     Returns
     -------
     list[dict]
-        DESCRIPTION.
 
     """
     res = duckdb.sql(
@@ -194,9 +201,23 @@ def list_cadastral(num_results: int = 100, page: int = 0) -> list[dict]:
 
 
 @v1.get("/cadastral/land_use")
-async def get_district_potential_building(
+def get_district_potential_building(
     num_results: int = 1000, page: int = 0
 ) -> list[dict]:
+    """
+    Get most popular land use per district
+    Parameters
+    ----------
+    num_results : int, optional
+        DESCRIPTION. The default is 1000.
+    page : int, optional
+        DESCRIPTION. The default is 0.
+
+    Returns
+    -------
+    list[dict]
+
+    """
     res = duckdb.sql(
         f"""
         WITH parcel_counts AS (
@@ -239,49 +260,60 @@ async def get_district_potential_building(
 
 
 @v1.get("/cadastral/district_parcel_areas", response_class=HTMLResponse)
-async def district_parcel_areas():
-    data = duckdb.sql(
-        f"""
-    INSTALL spatial;
-    LOAD spatial;
-    INSTALL parquet;
-    LOAD parquet;
-    SET memory_limit = '5GB';
-    SET threads TO 8;
-    with parcel_building_areas as (
-       SELECT 
-           district,
-           sum(parcel_area) AS total_parcel_area,
-           SUM(building_area) as total_building_area
-       FROM {read_prepared_sql()}
-       GROUP BY district
-            )
-    SELECT  
-        district,
-        (total_parcel_area/NULLIF(total_building_area, 0)) AS area_ratio
-    from parcel_building_areas
-    ORDER BY area_ratio desc limit 10
-    ;
+def district_parcel_areas():
     """
-    ).to_df()
-    fig = px.bar(
-        data,
-        x="district",
-        y="area_ratio",
-        color="district",
-        title="Survival Rate by Class with Plotly",
-    )
+    Show the plot of the districts with most potential new buildings.
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
 
-    plot_div = to_html(fig, full_html=False)
-
-    html_content = f"""
-    <html>
-        <head>
-            <title>The district with more potentials for new buildings</title>
-        </head>
-        <body>
-            {plot_div}
-        </body>
-    </html>
     """
-    return HTMLResponse(content=html_content)
+    try:
+        data = duckdb.sql(
+            f"""
+        INSTALL spatial;
+        LOAD spatial;
+        INSTALL parquet;
+        LOAD parquet;
+        SET memory_limit = '5GB';
+        SET threads TO 8;
+        with parcel_building_areas as (
+           SELECT
+               district,
+               sum(parcel_area) AS total_parcel_area,
+               SUM(building_area) as total_building_area
+           FROM {read_prepared_sql()}
+           GROUP BY district
+                )
+        SELECT
+            district,
+            (total_parcel_area/NULLIF(total_building_area, 0)) AS area_ratio
+        from parcel_building_areas
+        ORDER BY area_ratio desc limit 10
+        ;
+        """
+        ).to_df()
+        fig = px.bar(
+            data,
+            x="district",
+            y="area_ratio",
+            color="district",
+            title="The district with more potentials for new buildings",
+        )
+
+        plot_div = to_html(fig, full_html=False)
+
+        html_content = f"""
+        <html>
+            <head>
+                <title>The district with more potentials for new buildings</title>
+            </head>
+            <body>
+                {plot_div}
+            </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Not not show the plot: {e}")

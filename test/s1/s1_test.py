@@ -16,11 +16,7 @@ def test_property_base(case) -> None:
     case.validate_response(response)
 
 
-def test_get_aircraft_endpoint():
-    response = client.get("/api/s1/aircraft/?num_results=2&page=0")
+def test_download_bremen_state_data_success():
+    response = client.post("/cadastral/download")
     assert response.status_code == 200
-
-
-def test_get_aircraft_data():
-    response = client.get("/api/s1/aircraft/?num_results=2&page=0")
-    assert len(response.json()) == 2
+    assert response.json() == "OK"

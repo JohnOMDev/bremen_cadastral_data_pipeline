@@ -13,19 +13,12 @@
 
 SHELL=bash
 
-export DOCKER_REPOSITORY=XXXX.dkr.ecr.us-east-1.amazonaws.com
-export DOCKER_FILE=${DOCKER_FILE_OW:-"docker/Dockerfile"}
-DOCKER_COMPOSE_FILE := ${DOCKER_COMPOSE_FILE-docker/compose.yaml}
 
 compose_file = compose.yaml
 service = syte_pipeline
-image_name = $(service)# ${DOCKER_REPOSITORY}/${SERVICE_NAME}
+image_name = $(service)
 tag = $(shell poetry version -s)
 
-export SERVICE_NAME=$(poetry version | awk '{print $$1}')
-export IMAGE_NAME=${SERVICE_NAME}  # ${DOCKER_REPOSITORY}/${SERVICE_NAME}
-export GIT_REPO=$(shell git config --get remote.origin.url | sed -E 's/^\s*.*:\/\///g')
-export GIT_COMMIT=$(shell git rev-parse HEAD)
 
 run:
     uvicorn syte_pipeline.app:app --proxy-header --host 0.0.0.0 --port 8080
@@ -35,7 +28,7 @@ test:
 
 build:
 	@echo "Building image $(service):$(tag) from $(compose_file)"
-	IMAGE_TAG="$(tag)" IMAGE_NAME=$(image_name) docker compose -f docker/$(compose_file) build $(service)
+	docker compose -f docker/$(compose_file) build $(service)
 	docker tag "$(image_name)":"$(tag)" "$(image_name)":latest
 
 build_docker:

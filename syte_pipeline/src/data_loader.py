@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 02 18:40:21 2024
+
+@author: johnomole
+"""
 from syte_pipeline.settings import Settings
 import os
 import psycopg
@@ -17,11 +24,26 @@ settings = Settings()
 
 
 class DataLoader:
+    """
+    Creation, Loading and interraction between the db and file systems
+    """
 
-    def __init__(self, default_db):
+    def __init__(self, default_db: str):
+        """
+
+        Parameters
+        ----------
+        default_db : str
+            postgres default credentials.
+
+        Returns
+        -------
+        None.
+
+        """
         self.db_config = default_db
 
-    def get_pg_conn(self):
+    def get_pg_conn(self) -> tuple:
 
         conn = psycopg.connect(self.db_config)
         cur = conn.cursor()
@@ -33,12 +55,11 @@ class DataLoader:
         Parameters
         ----------
         default_db : str
-            DESCRIPTION.
+
 
         Returns
         -------
         None
-            DESCRIPTION.
 
         """
         conn, cur = self.get_pg_conn()
@@ -75,7 +96,19 @@ class DataLoader:
         except BaseException:
             conn.rollback()
 
-    def insert_data_into_buildings(self, building_data):
+    def insert_data_into_buildings(self, building_data: list[tuple]) -> None:
+        """
+
+        Parameters
+        ----------
+        building_data : list[tuple]
+            list of tuples containing the buidling data.
+
+        Returns
+        -------
+        None
+
+        """
         try:
             conn, cur = self.get_pg_conn()
 
@@ -106,7 +139,19 @@ class DataLoader:
             cur.close()
             conn.close()
 
-    def insert_data_into_parcels(self, parcel_data):
+    def insert_data_into_parcels(self, parcel_data: list[tuple]) -> None:
+        """
+
+        Parameters
+        ----------
+        parcel_data : list[tuple]
+            list of tuples containing the parcel data.
+
+        Returns
+        -------
+        None
+
+        """
         try:
             conn, cur = self.get_pg_conn()
 
@@ -136,12 +181,22 @@ class DataLoader:
             cur.close()
             conn.close()
 
-    def export_building_parcel_data_to_psql(self, _file_dir: str) -> None:
+    def export_building_parcel_data_to_psql(self, _file_dir: list) -> None:
+        """
+
+        Parameters
+        ----------
+        _file_dir : list
+
+        Returns
+        -------
+        None
+
+        """
 
         try:
             LOG.info(f"Processing file: {_file_dir}")
 
-            # Read parquet data using DuckDB
             data = duckdb.sql(
                 f"""
                 INSTALL spatial;
@@ -175,7 +230,6 @@ class DataLoader:
                 LOG.warning("No data fetched from DuckDB.")
                 return
 
-            # Prepare data for insertion
             building_data = [
                 (row[0], row[1], row[2], row[3], row[4], row[5], row[6]) for row in data
             ]
@@ -184,10 +238,8 @@ class DataLoader:
                 for row in data
             ]
 
-            # Insert data into buildings table
             self.insert_data_into_buildings(building_data)
 
-            # Insert data into parcels table
             self.insert_data_into_parcels(parcel_data)
 
         except Exception as e:
