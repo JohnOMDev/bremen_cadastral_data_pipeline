@@ -15,7 +15,7 @@ services:
       - COMPOSE_CONVERT_WINDOWS_PATHS=1
       - MAX_WORKERS=1
       - SYTE_LOCAL_DIR=/opt/data
-      - syte_db_host=${syte_db_host}
+      - syte_db_host=postgis
       - syte_db_password=${syte_db_password}
       - syte_db_user=${syte_db_user}
     logging:
