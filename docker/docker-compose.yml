@@ -34,7 +34,7 @@ services:
       POSTGRES_PASSWORD: ${syte_db_password}
       POSTGRES_DB: ${syte_dbname}
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${user} -d ${db}']
+      test: ['CMD-SHELL', 'pg_isready -U ${syte_db_user} -d ${syte_dbname}']
       interval: 1s
       timeout: 1s
       retries: 30
