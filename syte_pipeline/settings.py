@@ -4,12 +4,12 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
-import syte_pipeline
+# import syte_pipeline
 
-SYTE_LOCAL_DIR = dirname(dirname(syte_pipeline.__file__))
+# SYTE_LOCAL_DIR = dirname(dirname(syte_pipeline.__file__))
 # Define the project directory
 
-# SYTE_LOCAL_DIR = os.getenv("SYTE_LOCAL_DIR")
+SYTE_LOCAL_DIR = os.getenv("SYTE_LOCAL_DIR")
 
 
 class DBCredentials(BaseSettings):
@@ -25,7 +25,7 @@ class DBCredentials(BaseSettings):
 class Settings(BaseSettings):
 
     local_dir: str = Field(
-        default=join(SYTE_LOCAL_DIR, "data"),
+        default=join(SYTE_LOCAL_DIR, "syte_data"),
         description="For any other value set env variable 'SYTE_LOCAL_DIR'",
     )
     telemetry_dsn: str = "http://project2_secret_token@uptrace:14317/2"
