@@ -163,7 +163,7 @@ class DataLoader:
                     location_text,
                     parcel_area,
                     cadastral_identifier,
-                    district
+                    district,
                     municipal
                 FROM read_parquet({_file_dir});
                 """
