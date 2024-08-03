@@ -6,28 +6,20 @@ Created on Fri Aug 02 15:15:30 2024
 @author: johnomole
 """
 
-from fastapi import APIRouter, status, BackgroundTasks, Response
+from fastapi import APIRouter, status
 from fastapi.responses import HTMLResponse
-from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from syte_pipeline.settings import Settings, DBCredentials
 import plotly.express as px
 from plotly.io import to_html
-import os
-import glob
-import duckdb
-import base64
-from io import BytesIO
-import matplotlib
-import seaborn as sns
-
-matplotlib.use("AGG")
-import matplotlib.pyplot as plt
 from os.path import join
 from syte_pipeline.src.ingestion import Extraction
 from syte_pipeline.src.transformation import Transformer
 from syte_pipeline.src.data_loader import DataLoader
 import logging
+import os
+import glob
+import duckdb
 
 
 logging.basicConfig(format="%(asctime)s %(name)s %(levelname)-10s %(message)s")
@@ -73,8 +65,6 @@ async def download_bremen_state_data() -> str:
         "https://gdi2.geo.bremen.de/inspire/download/ADV-Shape/data/ALKIS_AdV_SHP_2024_04_HB.zip",
         "https://gdi2.geo.bremen.de/inspire/download/ADV-Shape/data/ALKIS_AdV_SHP_2024_04_BHV.zip",
     ]
-
-    # We use parallelization to avoid wasting time
     with ThreadPoolExecutor(max_workers=12) as executor:
         executor.map(extraction_handler.extract_specific_files, zip_url)
 
@@ -231,6 +221,7 @@ async def get_district_potential_building(
             total_building_area
         FROM ranked_parcels
         WHERE rank = 1
+        ORDER BY total_building_area LIMIT {num_results} OFFSET {num_results * page}
         ;
                 """
     )
@@ -294,32 +285,3 @@ async def district_parcel_areas():
     </html>
     """
     return HTMLResponse(content=html_content)
-
-
-duckdb.sql(
-    f"""
-WITH parcel_counts AS (
-    SELECT
-        district,
-        type,
-        SUM(building_area) AS total_building_area
-    FROM {read_prepared_sql()}
-    GROUP BY district, type
-),
-ranked_parcels AS (
-    SELECT
-        district,
-        type,
-        total_building_area,
-        ROW_NUMBER() OVER (PARTITION BY district ORDER BY total_building_area DESC) AS rank
-    FROM parcel_counts
-)
-SELECT
-    district,
-    type AS most_popular_land_type,
-    total_building_area
-FROM ranked_parcels
-WHERE rank = 1
-;
-        """
-).to_df()
