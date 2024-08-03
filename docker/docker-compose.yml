@@ -1,6 +1,6 @@
 services:
   syte_pipeline:
-    image: ${IMAGE_NAME}:${IMAGE_TAG}
+    image: syte:v1
     build:
       context: ..
       dockerfile: docker/Dockerfile
