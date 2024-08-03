@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Dec 19 18:40:21 2023
+Created on Fri Aug 02 18:40:21 2024
 
 @author: johnomole
 """
@@ -23,7 +23,7 @@ settings = Settings()
 
 class Extraction:
 
-    def extract_shapefiles__zip(self, url):
+    def extract_shapefiles__zip(self, url:str):
         """
         Download the ZIP file from a URL.
 
