@@ -92,7 +92,9 @@ After the data has been processed, you can query and visualize the results.
 
 1. **Access Fast API UI:**
     FastAPI is used for accessing, controlling, and testing the pipeline. The FastAPI dashboard for the data pipeline can be accessed at http://0.0.0.0:8000/docs or http://localhost:8000/docs.
+    ![Project Dashboard](images/dash.png)
 
+    ![Project Dashboard](images/viz.png)
 1. **Access the Database:**
 
    You can connect to the PostgreSQL database using a client tool like `psql` or any GUI client. Use the credentials provided in `docker-compose.yml`.
