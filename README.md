@@ -77,7 +77,11 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
 
 #### Run using docker
 
-1. **docker volume create syte_data**
+1. **Run locally:**
+
+    ```sh
+    ocker volume create syte_data
+    ```
 
 2. **Create the environment varaible in `docker` folder (name it .env)**:
 	Create a .env file: Place the below configuration in a file named .env in your `docker` directory.
@@ -193,4 +197,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for detai
 
 ## Contact
 
-For any questions or issues, please contact [Your Name](mailto:contact@johnomole.me).
+For any questions or issues, please contact [John Omole](mailto:contact@johnomole.me).
