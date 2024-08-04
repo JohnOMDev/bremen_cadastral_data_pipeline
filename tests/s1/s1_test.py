@@ -23,6 +23,6 @@ def test_download_bremen_state_data_success():
 
 
 def test_get_cadastral_data():
-    response = client.post("/api/s1/cadastral/")
+    response = client.get("/api/v1/cadastral/")
     assert response.status_code == 200
     assert len(response.json()) > 1

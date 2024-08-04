@@ -47,10 +47,10 @@ jobs:
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
-      - name: Run tests
-        run: |
-          source .venv/bin/activate
-          make test_s1
+      # - name: Run tests
+      #   run: |
+      #     source .venv/bin/activate
+      #     make test_s1
       - name: Format code
         run: |
           make format

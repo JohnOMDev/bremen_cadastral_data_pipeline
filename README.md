@@ -145,7 +145,8 @@ The database credentials and other configurations can be set in the `.env` file 
 
 ## Testing
 
-3. **You can perform linting and test with the following command**
+1. **You can test each unit or the full converage (the test can only be performed when running in local mode)**
+    ![Test](images/test.png)
     Full Coverage test
     ```sh
     make test
@@ -154,17 +155,16 @@ The database credentials and other configurations can be set in the `.env` file 
     ```sh
     make test_s1
     ```
-
-    Unit Linting
+2. **Linting** 
     ```sh
     make lint
     ```
-    Formating
+3. **Formating**
     ```sh
     make format
     ```
-
-    Security
+4. **Security** 
+    
     ```sh
     make security
     ```

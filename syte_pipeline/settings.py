@@ -15,7 +15,7 @@ SYTE_LOCAL_DIR = os.getenv("SYTE_LOCAL_DIR")
 class DBCredentials(BaseSettings):
     """Use env variables prefixed with SYTE_DB_"""
 
-    host: str = "localhost"
+    host: str
     port: int = 5432
     user: str
     password: str
