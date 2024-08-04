@@ -127,7 +127,7 @@ class Transformer:
         except Exception as e:
             print(f"Unexpected error: {e}")
             raise
-            return df
+        return df
 
     def transform(self, file_map) -> None:
         output_dir = os.path.join(settings.prepared_dir, "day=20240801")
