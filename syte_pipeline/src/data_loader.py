@@ -156,7 +156,8 @@ class DataLoader:
             conn, cur = self.get_pg_conn()
 
             insert_parcel_query = """
-                INSERT INTO parcels (identifier, geometry, area, location_text, cadastral_identifier, district, municipal)
+                INSERT INTO parcels (identifier, geometry, area, location_text, 
+                                        cadastral_identifier, district, municipal)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (identifier)
                 DO UPDATE SET

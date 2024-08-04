@@ -17,6 +17,12 @@ def test_property_base(case) -> None:
 
 
 def test_download_bremen_state_data_success():
-    response = client.post("/cadastral/download")
+    response = client.post("/api/v1/cadastral/download")
     assert response.status_code == 200
     assert response.json() == "OK"
+
+
+def test_get_cadastral_data():
+    response = client.post("/api/s1/cadastral/")
+    assert response.status_code == 200
+    assert len(response.json()) > 1

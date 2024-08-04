@@ -28,6 +28,8 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
 
 ### Installation
 
+
+#### Run Locally
 1. **Use Python 3.11**:
    Ensure you have Python 3.11 installed.
 
@@ -59,9 +61,25 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
    ```sh
    poetry shell
     ```
-8. **docker volume create syte_data**
 
-9. **Create the environment varaible in `docker` folder (name it .env)**:
+8. **Export the environment varaible in your terminal**:
+    ```sh
+    export syte_db_password="syte"
+    export syte_db_user="syte"
+    export syte_dbname="syte"
+    export syte_db_host="localhost"
+    ```
+9. **Run locally:**
+
+    ```sh
+    uvicorn syte_pipeline.app:app --proxy-header --host 0.0.0.0 --port 8080
+    ```
+
+#### Run using docker
+
+1. **docker volume create syte_data**
+
+2. **Create the environment varaible in `docker` folder (name it .env)**:
 	Create a .env file: Place the below configuration in a file named .env in your `docker` directory.
    ```sh
     filename : .env
@@ -71,14 +89,12 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
     syte_db_password=syte
     syte_db_user=syte
     syte_dbname=syte
-    ```
-10. **Build and Run the Docker Containers and start the application:**
+
+3. **Start the Docker Containers**
 
     ```sh
-    make all
+    make docker-compose
     ```
-
-This command will build the Docker images and start the services defined in `docker-compose.yml`.
 
 ## Usage
 
@@ -97,7 +113,7 @@ After the data has been processed, you can query and visualize the results.
     ![Project Dashboard](images/viz.png)
 1. **Access the Database:**
 
-   You can connect to the PostgreSQL database using a client tool like `psql` or any GUI client. Use the credentials provided in `docker-compose.yml`.
+   You can connect to the PostgreSQL database using a client tool like `psql` or any GUI client. Use the credentials provided in `.env`.
 
 2. **Run SQL Queries:**
 
@@ -129,7 +145,29 @@ The database credentials and other configurations can be set in the `.env` file 
 
 ## Testing
 
+3. **You can perform linting and test with the following command**
+    Full Coverage test
+    ```sh
+    make test
+    ```
+    Unit Test
+    ```sh
+    make test_s1
+    ```
 
+    Unit Linting
+    ```sh
+    make lint
+    ```
+    Formating
+    ```sh
+    make format
+    ```
+
+    Security
+    ```sh
+    make security
+    ```
 
 ## Performance Optimization
 

@@ -19,7 +19,6 @@ service = syte_pipeline
 image_name = $(service)
 tag = $(shell poetry version -s)
 
-
 run:
     uvicorn syte_pipeline.app:app --proxy-header --host 0.0.0.0 --port 8080
 
@@ -51,6 +50,7 @@ stop_docker:
 ps:
 	IMAGE_TAG="$(tag)" IMAGE_NAME=$(image_name) docker compose -f docker/$(compose_file) ps
 
+
 logs:
 	IMAGE_TAG="$(tag)" IMAGE_NAME=$(image_name) docker compose -f docker/$(compose_file) logs $(service)
 
@@ -65,13 +65,15 @@ format:
 	black syte_pipeline/s1/
 
 test_s1:
-	pytest tests/s1/s1_test.py::test_get_aircraft_endpoint
-	pytest tests/s1/s1_test.py::test_aircraft_positions_endpoint
-	pytest tests/s1/s1_test.py::test_icao_stats_endpoint
+	pytest tests/s1/s1_test.py::test_download_bremen_state_data_success
+	pytest tests/s1/s1_test.py::test_get_cadastral_data
 
 lint:
 	flake8 syte_pipeline/s1/ --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 syte_pipeline/s1/ --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+	flake8 syte_pipeline/s1/ --count --exit-zero --max-complexity=10 --max-line-length=250 --statistics
 
-security:
+securty:
 	bandit -r syte_pipeline/s1/ --tests B101, B301, B303, B602, B701
+
+docker-compose:
+	docker-compose -f docker/docker-compose.yml up -d  --build
