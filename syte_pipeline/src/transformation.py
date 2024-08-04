@@ -8,6 +8,7 @@ Created on Fri Aug 02 18:40:21 2024
 from syte_pipeline.settings import Settings
 import os
 import duckdb
+import shutil
 import logging
 import geopandas as gpd
 
@@ -22,7 +23,7 @@ settings = Settings()
 
 
 class Transformer:
-    def read_shapefiles_file(self, filename:str):
+    def read_shapefiles_file(self, filename: str):
         """
 
         Parameters
@@ -78,7 +79,9 @@ class Transformer:
 
         """
         try:
-            gdf_join_df = gpd.sjoin(df_building, df_parcel, how="inner", predicate="within")
+            gdf_join_df = gpd.sjoin(
+                df_building, df_parcel, how="inner", predicate="within"
+            )
         except Exception as e:
             LOG.error(f" Error during spatial join: {e}")
             raise
@@ -126,6 +129,31 @@ class Transformer:
             raise
             return df
 
+    def transform(self, file_map) -> None:
+        output_dir = os.path.join(settings.prepared_dir, "day=20240801")
+        if os.path.exists(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        for k, file_paths in file_map.items():
+            dfs = {}
+            for file_path in file_paths:
+                file_name = os.path.splitext(os.path.basename(file_path))[0]
+                if file_name in ["GebaeudeBauwerk", "Flurstueck"]:
+                    try:
+                        dfs[file_name] = self.read_shapefiles_file(file_path)
+                    except Exception as e:
+                        LOG.error(f"Error reading shapefile {file_path}: {e}")
+                    continue
+
+            df_building = dfs.get("GebaeudeBauwerk")
+            df_parcel = dfs.get("Flurstueck")
+            if df_building is not None and df_parcel is not None:
+                try:
+                    df_spatial = self.spatial_join(df_building, df_parcel)
+                    self.to_parquet(df_spatial, output_dir)
+                except Exception as e:
+                    LOG.error(f"Error during spatial join or parquet conversion: {e}")
+
     def to_parquet(self, df_spatial: gpd.GeoDataFrame, output_dir: str) -> None:
         """
         Save spatial data to parquet files, one per district.
@@ -144,12 +172,11 @@ class Transformer:
 
         try:
             for district, group in df_spatial.groupby("district"):
-    
+
                 output_file = os.path.join(output_dir, f"{district}.parquet")
-    
+
                 group.to_parquet(output_file, engine="pyarrow", index=False)
-    
+
                 LOG.info(f"Saved partition for district {district} to {output_file}")
         except Exception as e:
             LOG.error(f"Error saving parquet files: {e}")
-        

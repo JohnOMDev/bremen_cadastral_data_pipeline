@@ -53,7 +53,9 @@ jobs:
       #     make test_s1
       - name: Format code
         run: |
+          source .venv/bin/activate
           make format
       - name: Lint with flake8
         run: |
+          source .venv/bin/activate
           make lint
