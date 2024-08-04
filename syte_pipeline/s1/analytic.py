@@ -69,7 +69,6 @@ def download_bremen_state_data() -> str:
         with ThreadPoolExecutor(max_workers=12) as executor:
             executor.map(extraction_handler.extract_specific_files, zip_url)
     except Exception as e:
-
         return f"Error: {str(e)}"
     return "OK"
 
@@ -100,7 +99,6 @@ def prepare_data() -> str:
 
         transform_handler.transform(file_map)
     except Exception as e:
-
         return f"Error: {str(e)}"
     return "OK"
 

@@ -61,12 +61,12 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
     ```
 8. **docker volume create syte_data**
 
-9. **Create the environment varaible in docker folder (name it .env)**:
-   Activate Poetry (dependency manager) using:
+9. **Create the environment varaible in `docker` folder (name it .env)**:
+	Create a .env file: Place the below configuration in a file named .env in your `docker` directory.
    ```sh
     filename : .env
     ```
-    Place the following in the file. You can also give it anyname you want.
+    Update the values: Replace syte_dbname, syte_db_user, and syte_db_password with your actual prefer values.
     ```sh
     syte_db_password=syte
     syte_db_user=syte
@@ -86,14 +86,12 @@ This command will build the Docker images and start the services defined in `doc
 
 The pipeline reads geospatial data from Parquet files, performs necessary transformations, and saves the results to a PostgreSQL database with PostGIS extension.
 
-
 ### Query and Visualization
 
 After the data has been processed, you can query and visualize the results.
 
 1. **Access Fast API UI:**
-
-   You can connect to the PostgreSQL database using a client tool like `psql` or any GUI client. Use the credentials provided in `docker-compose.yml`.
+    FastAPI is used for accessing, controlling, and testing the pipeline. The FastAPI dashboard for the data pipeline can be accessed at http://0.0.0.0:8000/docs or http://localhost:8000/docs.
 
 1. **Access the Database:**
 
@@ -121,7 +119,7 @@ After the data has been processed, you can query and visualize the results.
     ```
 
 ## Configuration
-The database credentials and other configurations can be set in the `docker-compose.yml` file. Adjust these settings as needed:
+The database credentials and other configurations can be set in the `.env` file under the docker folder. Adjust these settings as needed:
 - `syte_dbname`: Database name
 - `syte_db_user`: Database user
 - `syte_db_password`: Database password
@@ -133,7 +131,7 @@ The database credentials and other configurations can be set in the `docker-comp
 
 ## Performance Optimization
 
-Consider the following optimization strategies:
+I consider the following optimization strategies considering the time and resources available:
 
 - **Data Chunking:** Divide data into manageable partitions to prevent memory overload.
 - **Efficient Queries:** Optimize SQL queries to enhance performance.

@@ -51,9 +51,6 @@ stop_docker:
 ps:
 	IMAGE_TAG="$(tag)" IMAGE_NAME=$(image_name) docker compose -f docker/$(compose_file) ps
 
-test_api: run_local
-	st run --checks all http://localhost:8080/openapi.json -H "Authorization: Bearer TOKEN"
-
 logs:
 	IMAGE_TAG="$(tag)" IMAGE_NAME=$(image_name) docker compose -f docker/$(compose_file) logs $(service)
 
@@ -76,5 +73,5 @@ lint:
 	flake8 syte_pipeline/s1/ --count --select=E9,F63,F7,F82 --show-source --statistics
 	flake8 syte_pipeline/s1/ --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
 
-securty:
+security:
 	bandit -r syte_pipeline/s1/ --tests B101, B301, B303, B602, B701
