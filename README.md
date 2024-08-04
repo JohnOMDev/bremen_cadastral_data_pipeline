@@ -80,7 +80,7 @@ This project is a pipeline for ingesting, transforming, and visualizing geospati
 1. **Run locally:**
 
     ```sh
-    ocker volume create syte_data
+    docker volume create syte_data
     ```
 
 2. **Create the environment varaible in `docker` folder (name it .env)**:
